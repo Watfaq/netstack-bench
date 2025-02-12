@@ -1,0 +1,40 @@
+[package]
+name = "netstack-bench"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures = "0.3"
+smoltcp = { version = "0.11", default-features = false, features = [
+    "std",
+    "log",
+    "medium-ip",
+    "proto-ipv4",
+    "proto-ipv6",
+    "socket-icmp",
+    "socket-udp",
+    "socket-tcp",
+] }
+tun2 = { version = "3", features = ["async"] }
+tokio = { version = "1", features = [
+    "rt",
+    "macros",
+    "rt-multi-thread",
+    "io-util",
+] }
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+tracing-subscriber = "0.3.18"
+structopt = "0.3"
+socket2 = "0.5.6"
+socket2-ext = { version = "0.1" }
+
+netstack-smoltcp = { git = "https://github.com/automesh-network/netstack-smoltcp.git", rev = "62260478079d96b42fa524caa855609312c2cf43" }
+netstack-lwip = { git = "https://github.com/Watfaq/netstack-lwip.git", rev = "2817bf82740e04bbee6b7bf1165f55657a6ed163" }
+
+[[bin]]
+name = "netstack-smoltcp"
+path = "src/netstack-smoltcp.rs"
+
+[[bin]]
+name = "netstack-lwip"
+path = "src/netstack-lwip.rs"

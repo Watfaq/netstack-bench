@@ -1,0 +1,185 @@
+use std::net::SocketAddr;
+
+use futures::{SinkExt, StreamExt};
+use netstack_lwip::*;
+use structopt::StructOpt;
+use tokio::net::{TcpSocket, TcpStream};
+use tracing::{error, info, warn};
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "forward", about = "Simply forward tun tcp/udp traffic.")]
+struct Opt {
+    /// Default binding interface, default by guessed.
+    /// Specify but doesn't exist, no device is bound.
+    #[structopt(short = "i", long = "interface")]
+    interface: String,
+
+    /// name of the tun device, default to rtun8.
+    #[structopt(short = "n", long = "name", default_value = "utun8")]
+    name: String,
+
+    /// Tracing subscriber log level.
+    #[structopt(long = "log-level", default_value = "debug")]
+    log_level: tracing::Level,
+
+    /// Tokio current-thread runtime, default to multi-thread.
+    #[structopt(long = "current-thread")]
+    current_thread: bool,
+
+    /// Tokio task spawn_local, default to spwan.
+    #[structopt(long = "local-task")]
+    local_task: bool,
+}
+
+fn main() {
+    let opt = Opt::from_args();
+
+    let rt = if opt.current_thread {
+        tokio::runtime::Builder::new_current_thread()
+    } else {
+        tokio::runtime::Builder::new_multi_thread()
+    }
+    .enable_all()
+    .build()
+    .unwrap();
+
+    rt.block_on(main_exec(opt));
+}
+
+async fn main_exec(opt: Opt) {
+    macro_rules! tokio_spawn {
+        ($fut: expr) => {
+            if opt.local_task {
+                tokio::task::spawn_local($fut)
+            } else {
+                tokio::task::spawn($fut)
+            }
+        };
+    }
+
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::FmtSubscriber::builder()
+            .with_max_level(opt.log_level)
+            .finish(),
+    )
+    .unwrap();
+
+    let mut cfg = tun2::Configuration::default();
+    cfg.layer(tun2::Layer::L3);
+    let fd = -1;
+    if fd >= 0 {
+        cfg.raw_fd(fd);
+    } else {
+        cfg.tun_name(&opt.name)
+            .address("10.10.10.2")
+            .destination("10.10.10.1")
+            .mtu(tun2::DEFAULT_MTU);
+        #[cfg(not(any(target_arch = "mips", target_arch = "mips64",)))]
+        {
+            cfg.netmask("255.255.255.0");
+        }
+        cfg.up();
+    }
+
+    let device = tun2::create_as_async(&cfg).unwrap();
+
+    let (stack, tcp_listener, udp_socket) =
+        netstack_lwip::NetStack::with_buffer_size(512, 256).unwrap();
+
+    let framed = device.into_framed();
+    let (mut tun_sink, mut tun_stream) = framed.split();
+    let (mut stack_sink, mut stack_stream) = stack.split();
+
+    let mut futs = vec![];
+
+    // Reads packet from stack and sends to TUN.
+    futs.push(tokio_spawn!(async move {
+        while let Some(pkt) = stack_stream.next().await {
+            if let Ok(pkt) = pkt {
+                match tun_sink.send(pkt.into()).await {
+                    Ok(_) => {}
+                    Err(e) => warn!("failed to send packet to TUN, err: {:?}", e),
+                }
+            }
+        }
+    }));
+
+    // Reads packet from TUN and sends to stack.
+    futs.push(tokio_spawn!(async move {
+        while let Some(pkt) = tun_stream.next().await {
+            if let Ok(pkt) = pkt {
+                match stack_sink.send(pkt.into()).await {
+                    Ok(_) => {}
+                    Err(e) => warn!("failed to send packet to stack, err: {:?}", e),
+                };
+            }
+        }
+    }));
+
+    // Extracts TCP connections from stack and sends them to the dispatcher.
+    let interface = opt.interface.clone();
+    futs.push(tokio_spawn!({
+        async move {
+            handle_inbound_stream(tcp_listener, interface).await;
+        }
+    }));
+
+    // Receive and send UDP packets between netstack and NAT manager. The NAT
+    // manager would maintain UDP sessions and send them to the dispatcher.
+    futs.push(tokio_spawn!(async move {
+        handle_inbound_datagram(udp_socket, opt.interface.clone()).await;
+    }));
+
+    futures::future::join_all(futs)
+        .await
+        .iter()
+        .for_each(|res| {
+            if let Err(e) = res {
+                error!("error: {:?}", e);
+            }
+        });
+}
+/// simply forward tcp stream
+async fn handle_inbound_stream(mut tcp_listener: TcpListener, interface: String) {
+    while let Some((mut stream, local, remote)) = tcp_listener.next().await {
+        let interface = interface.clone();
+        tokio::spawn(async move {
+            info!("new tcp connection: {:?} => {:?}", local, remote);
+            match new_tcp_stream(remote, &interface).await {
+                Ok(mut remote_stream) => {
+                    // pipe between two tcp stream
+                    match tokio::io::copy_bidirectional(&mut stream, &mut remote_stream).await {
+                        Ok(_) => {}
+                        Err(e) => warn!(
+                            "failed to copy tcp stream {:?}=>{:?}, err: {:?}",
+                            local, remote, e
+                        ),
+                    }
+                }
+                Err(e) => warn!(
+                    "failed to new tcp stream {:?}=>{:?}, err: {:?}",
+                    local, remote, e
+                ),
+            }
+        });
+    }
+}
+
+/// simply forward udp datagram
+async fn handle_inbound_datagram(_udp_socket: Box<UdpSocket>, _interface: String) {
+}
+
+async fn new_tcp_stream<'a>(addr: SocketAddr, iface: &str) -> std::io::Result<TcpStream> {
+    use socket2_ext::{AddressBinding, BindDeviceOption};
+    let socket = socket2::Socket::new(socket2::Domain::IPV4, socket2::Type::STREAM, None)?;
+    socket.bind_to_device(BindDeviceOption::v4(iface))?;
+    socket.set_keepalive(true)?;
+    socket.set_nodelay(true)?;
+    socket.set_nonblocking(true)?;
+
+    let stream = TcpSocket::from_std_stream(socket.into())
+        .connect(addr)
+        .await?;
+
+    Ok(stream)
+}
