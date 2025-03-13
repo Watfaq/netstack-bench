@@ -73,6 +73,7 @@ install_iperf3
 print_blue "Building the binaries..."
 cargo build --bin=netstack-smoltcp --release
 cargo build --bin=netstack-lwip --release
+cargo build --bin=netstack-system --release
 
 # 3. create network namespace
 
@@ -129,6 +130,7 @@ run_benchmark() {
 print_blue "Running benchmarks..."
 run_benchmark "./target/release/netstack-smoltcp"
 run_benchmark "./target/release/netstack-lwip"
+run_benchmark "./target/release/netstack-system"
 
 # 5. clean up
 kill $IPERF_SERVER_PID

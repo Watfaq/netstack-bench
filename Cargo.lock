@@ -312,6 +312,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "etherparse"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b14e4ac78394e3ea04edbbc412099cf54f2f52ded51efb79c466a282729399d2"
+dependencies = [
+ "arrayvec",
+]
+
+[[package]]
 name = "event-listener"
 version = "5.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -628,7 +637,8 @@ dependencies = [
  "futures",
  "netstack-lwip",
  "netstack-smoltcp",
- "smoltcp",
+ "netstack-system",
+ "smoltcp 0.11.0",
  "socket2",
  "socket2-ext",
  "structopt",
@@ -658,11 +668,26 @@ name = "netstack-smoltcp"
 version = "0.1.3"
 source = "git+https://github.com/automesh-network/netstack-smoltcp.git?rev=62260478079d96b42fa524caa855609312c2cf43#62260478079d96b42fa524caa855609312c2cf43"
 dependencies = [
- "etherparse",
+ "etherparse 0.16.0",
  "futures",
  "rand",
- "smoltcp",
+ "smoltcp 0.11.0",
  "spin",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
+name = "netstack-system"
+version = "0.1.0"
+source = "git+https://github.com/Watfaq/netstack-system.git?rev=d8ffc602137cd826c6bf426432f07a1725c6d33f#d8ffc602137cd826c6bf426432f07a1725c6d33f"
+dependencies = [
+ "byteorder",
+ "etherparse 0.17.0",
+ "futures",
+ "smoltcp 0.12.0",
+ "thiserror 2.0.11",
  "tokio",
  "tokio-util",
  "tracing",
@@ -969,6 +994,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "smoltcp"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dad095989c1533c1c266d9b1e8d70a1329dd3723c3edac6d03bbd67e7bf6f4bb"
+dependencies = [
+ "bitflags 1.3.2",
+ "byteorder",
+ "cfg-if",
+ "defmt",
+ "heapless",
+ "libc",
+ "log",
+ "managed",
+]
+
+[[package]]
 name = "socket2"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1163,7 +1204,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "784e0ac535deb450455cbfa28a6f0df145ea1bb7ae51b821cf5e7927fdcfbdd0"
 dependencies = [
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.28"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "395ae124c09f9e6918a2310af6038fba074bcf474ac352496d5910dd59a2226d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
 ]
 
 [[package]]
