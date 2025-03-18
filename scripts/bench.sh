@@ -65,6 +65,8 @@ install_iperf3() {
     fi
 }
 
+export PATH=$PATH:/home/runner/.cargo/bin
+
 # 1. prepare
 print_blue "Installing iperf3..."
 install_iperf3

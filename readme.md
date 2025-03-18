@@ -3,3 +3,7 @@
 ## run
 
 `bash scripts/bench.sh`
+
+## result
+
+[result](./benchmark_results.txt)

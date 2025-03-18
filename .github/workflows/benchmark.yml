@@ -1,0 +1,47 @@
+name: Benchmark and Commit Results
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - name: probe
+        run: |
+          echo $CARGO_HOME
+          echo $HOME/.cargo
+          ls $CARGO_HOME/bin
+          ls $HOME/.cargo/bin
+
+      - name: Run benchmark script
+        run: |
+          echo "PATH=${HOME}/.cargo/bin:${PATH}" >> $GITHUB_ENV
+          sudo -E bash scripts/bench.sh > benchmark_results.txt
+          sudo cat benchmark_results.txt
+      - name: set up git url 
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+      - name: Commit and push
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "Automated commit"
+          push: true
+        
