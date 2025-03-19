@@ -88,7 +88,7 @@ async fn main_exec(opt: Opt) {
     println!("created device: {:?}", device.address());
 
     let framed = device.into_framed();
-    let (tun_sink, mut tun_stream) = framed.split();
+    let (mut tun_sink, mut tun_stream) = framed.split();
 
     let mut futs = vec![];
 
@@ -99,7 +99,12 @@ async fn main_exec(opt: Opt) {
     let listener = listener.unwrap();
     let udp_socket = udp_socket.unwrap();
 
-    futs.push(stack.process_loop(tun_sink));
+    futs.push(tokio_spawn!(async move {
+        let mut stream = Box::pin(stack.stream());
+        while let Some(pkt) = stream.next().await {
+            let _ = tun_sink.send(pkt).await;
+        }
+    }));
 
     futs.push(tokio_spawn!(async move {
         while let Some(pkt) = tun_stream.next().await {
