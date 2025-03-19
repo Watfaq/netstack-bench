@@ -1,0 +1,124 @@
+[0;34mInstalling iperf3...[0m
+[0;32m[+][0m Using apt package manager
+Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [142 B]
+Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+Hit:6 https://packages.microsoft.com/repos/azure-cli noble InRelease
+Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3599 B]
+Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main armhf Packages [7318 B]
+Get:9 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [14.6 kB]
+Get:10 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [23.0 kB]
+Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [921 kB]
+Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [209 kB]
+Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [151 kB]
+Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 c-n-f Metadata [13.4 kB]
+Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1040 kB]
+Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [262 kB]
+Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [364 kB]
+Get:18 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 c-n-f Metadata [25.8 kB]
+Get:19 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [153 kB]
+Get:20 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Components [212 B]
+Get:21 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 c-n-f Metadata [464 B]
+Get:22 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+Get:23 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 c-n-f Metadata [656 B]
+Get:24 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [208 B]
+Get:25 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [20.0 kB]
+Get:26 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 c-n-f Metadata [1256 B]
+Get:27 http://azure.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 Components [212 B]
+Get:28 http://azure.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Components [212 B]
+Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [670 kB]
+Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [130 kB]
+Get:31 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [8964 B]
+Get:32 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 c-n-f Metadata [6912 B]
+Get:33 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [819 kB]
+Get:34 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [177 kB]
+Get:35 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [52.0 kB]
+Get:36 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 c-n-f Metadata [16.9 kB]
+Get:37 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [726 kB]
+Get:38 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [146 kB]
+Get:39 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Components [212 B]
+Get:40 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 c-n-f Metadata [432 B]
+Get:41 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Components [208 B]
+Get:42 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 c-n-f Metadata [448 B]
+Fetched 6344 kB in 1s (6815 kB/s)
+Reading package lists...
+Building dependency tree...
+Reading state information...
+65 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libiperf0 libsctp1
+Suggested packages:
+  lksctp-tools
+The following NEW packages will be installed:
+  iperf3 libiperf0 libsctp1
+0 upgraded, 3 newly installed, 0 to remove and 65 not upgraded.
+Need to get 115 kB of archives.
+After this operation, 390 kB of additional disk space will be used.
+Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [142 B]
+Get:2 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsctp1 amd64 1.0.19+dfsg-2build1 [9146 B]
+Get:3 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libiperf0 amd64 3.16-1build2 [87.1 kB]
+Get:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 iperf3 amd64 3.16-1build2 [19.0 kB]
+Preconfiguring packages ...
+Fetched 115 kB in 0s (1594 kB/s)
+Selecting previously unselected package libsctp1:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 221031 files and directories currently installed.)
+Preparing to unpack .../libsctp1_1.0.19+dfsg-2build1_amd64.deb ...
+Unpacking libsctp1:amd64 (1.0.19+dfsg-2build1) ...
+Selecting previously unselected package libiperf0:amd64.
+Preparing to unpack .../libiperf0_3.16-1build2_amd64.deb ...
+Unpacking libiperf0:amd64 (3.16-1build2) ...
+Selecting previously unselected package iperf3.
+Preparing to unpack .../iperf3_3.16-1build2_amd64.deb ...
+Unpacking iperf3 (3.16-1build2) ...
+Setting up libsctp1:amd64 (1.0.19+dfsg-2build1) ...
+Setting up libiperf0:amd64 (3.16-1build2) ...
+Setting up iperf3 (3.16-1build2) ...
+Processing triggers for ufw (0.36.2-6) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.4) ...
+[0;32m[+][0m iperf3 installed successfully
+[1;33m[*][0m Version: iperf 3.16 (cJSON 1.7.15)
+Linux fv-az1964-173 6.8.0-1021-azure #25-Ubuntu SMP Wed Jan 15 20:45:09 UTC 2025 x86_64
+Optional features available: CPU affinity setting, IPv6 flow label, SCTP, TCP congestion algorithm setting, sendfile / zerocopy, socket pacing, authentication, bind to device, support IPv4 don't fragment, POSIX threads
+[0;34mBuilding the binaries...[0m
+[0;34mCreating network namespace...[0m
+[0;34mRunning benchmarks...[0m
+[1;33mRunning iperf3 for 10 seconds with ./target/release/netstack-smoltcp...[0m
+[0;32mConnecting to host 192.168.89.63, port 5201
+[  5] local 192.168.89.64 port 39704 connected to 192.168.89.63 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-10.01  sec  40.1 GBytes  34.4 Gbits/sec    0    844 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.01  sec  40.1 GBytes  34.4 Gbits/sec    0             sender
+[  5]   0.00-10.01  sec  40.1 GBytes  34.4 Gbits/sec                  receiver
+
+iperf Done.[0m
+[1;33mRunning iperf3 for 10 seconds with ./target/release/netstack-lwip...[0m
+[0;32mConnecting to host 192.168.89.63, port 5201
+[  5] local 10.10.10.2 port 55344 connected to 192.168.89.63 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-10.01  sec  1.88 GBytes  1.61 Gbits/sec    0   79.8 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.01  sec  1.88 GBytes  1.61 Gbits/sec    0             sender
+[  5]   0.00-10.01  sec  1.88 GBytes  1.61 Gbits/sec                  receiver
+
+iperf Done.[0m
+created device: Ok(10.10.10.2)
+[1;33mRunning iperf3 for 10 seconds with ./target/release/netstack-system...[0m
+[0;32mConnecting to host 192.168.89.63, port 5201
+[  5] local 10.10.10.2 port 51564 connected to 192.168.89.63 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-10.01  sec  1.50 GBytes  1.29 Gbits/sec   69    598 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.01  sec  1.50 GBytes  1.29 Gbits/sec   69             sender
+[  5]   0.00-10.05  sec  1.50 GBytes  1.28 Gbits/sec                  receiver
+
+iperf Done.[0m
