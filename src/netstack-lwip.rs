@@ -166,8 +166,7 @@ async fn handle_inbound_stream(mut tcp_listener: TcpListener, interface: String)
 }
 
 /// simply forward udp datagram
-async fn handle_inbound_datagram(_udp_socket: Box<UdpSocket>, _interface: String) {
-}
+async fn handle_inbound_datagram(_udp_socket: Box<UdpSocket>, _interface: String) {}
 
 async fn new_tcp_stream<'a>(addr: SocketAddr, iface: &str) -> std::io::Result<TcpStream> {
     use socket2_ext::{AddressBinding, BindDeviceOption};

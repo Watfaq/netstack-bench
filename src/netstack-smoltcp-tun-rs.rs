@@ -1,10 +1,11 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{net::SocketAddr, sync::Arc};
 
 use futures::{SinkExt, StreamExt};
 use netstack_smoltcp::{StackBuilder, TcpListener, UdpSocket};
 use structopt::StructOpt;
 use tokio::net::{TcpSocket, TcpStream};
 use tracing::{error, info, warn};
+use tun_rs::{DeviceBuilder, GROTable, IDEAL_BATCH_SIZE, VIRTIO_NET_HDR_LEN};
 
 // to run this example, you should set the policy routing **after the start of the main program**
 //
@@ -90,33 +91,18 @@ async fn main_exec(opt: Opt) {
     )
     .unwrap();
 
-    let mut cfg = tun2::Configuration::default();
-    cfg.layer(tun2::Layer::L3);
-    let fd = -1;
-    if fd >= 0 {
-        cfg.raw_fd(fd);
-    } else {
-        cfg.tun_name(&opt.name)
-            .address("10.10.10.2")
-            .destination("10.10.10.1")
-            .mtu(tun2::DEFAULT_MTU);
-        #[cfg(not(any(target_arch = "mips", target_arch = "mips64",)))]
-        {
-            cfg.netmask("255.255.255.0");
-        }
-        cfg.up();
-    }
+    let dev = DeviceBuilder::new()
+        .layer(tun_rs::Layer::L3)
+        .name(&opt.name)
+        .ipv4("10.10.10.2", 24, Some("10.10.10.1"))
+        .mtu(1400)
+        .offload(true)
+        .build_async()
+        .unwrap();
+    let builder = StackBuilder::default().enable_tcp(true).enable_udp(true);
 
-    let device = tun2::create_as_async(&cfg).unwrap();
-    let mut builder = StackBuilder::default()
-        .enable_tcp(true)
-        .enable_udp(true)
-        .enable_icmp(true);
-    if let Some(device_broadcast) = get_device_broadcast(&device) {
-        builder = builder
-            // .add_ip_filter(Box::new(move |src, dst| *src != device_broadcast && *dst != device_broadcast));
-            .add_ip_filter_fn(move |src, dst| *src != device_broadcast && *dst != device_broadcast);
-    }
+    let dev = Arc::new(dev);
+    let dev1 = dev.clone();
 
     let (stack, runner, udp_socket, tcp_listener) = builder.build().unwrap();
     let udp_socket = udp_socket.unwrap(); // udp enabled
@@ -126,8 +112,6 @@ async fn main_exec(opt: Opt) {
         tokio_spawn!(runner);
     }
 
-    let framed = device.into_framed();
-    let (mut tun_sink, mut tun_stream) = framed.split();
     let (mut stack_sink, mut stack_stream) = stack.split();
 
     let mut futs = vec![];
@@ -135,8 +119,18 @@ async fn main_exec(opt: Opt) {
     // Reads packet from stack and sends to TUN.
     futs.push(tokio_spawn!(async move {
         while let Some(pkt) = stack_stream.next().await {
+            let mut gro_table = GROTable::default();
             if let Ok(pkt) = pkt {
-                match tun_sink.send(pkt).await {
+                // TODO: could we introduce friendlier `send_multiple` method
+                // for not building the pkt again? or shall we reserve the space for hdr in our netstack impl?
+                let mut pkt_with_hdr = Vec::with_capacity(VIRTIO_NET_HDR_LEN + pkt.len());
+                pkt_with_hdr.extend_from_slice(&[0; VIRTIO_NET_HDR_LEN]);
+                pkt_with_hdr.extend_from_slice(&pkt);
+                let mut bufs = vec![pkt_with_hdr];
+                match dev
+                    .send_multiple(&mut gro_table, &mut bufs, VIRTIO_NET_HDR_LEN)
+                    .await
+                {
                     Ok(_) => {}
                     Err(e) => warn!("failed to send packet to TUN, err: {:?}", e),
                 }
@@ -146,12 +140,18 @@ async fn main_exec(opt: Opt) {
 
     // Reads packet from TUN and sends to stack.
     futs.push(tokio_spawn!(async move {
-        while let Some(pkt) = tun_stream.next().await {
-            if let Ok(pkt) = pkt {
-                match stack_sink.send(pkt).await {
-                    Ok(_) => {}
-                    Err(e) => warn!("failed to send packet to stack, err: {:?}", e),
-                };
+        let mut original_buffer = vec![0; VIRTIO_NET_HDR_LEN + 65535];
+        let mut bufs = vec![vec![0u8; 1500]; IDEAL_BATCH_SIZE];
+        let mut sizes = vec![0; IDEAL_BATCH_SIZE];
+
+        while let Ok(num) = dev1
+            .recv_multiple(&mut original_buffer, &mut bufs, &mut sizes, 0)
+            .await
+        {
+            for i in 0..num {
+                if let Err(err) = stack_sink.send(bufs[i][..sizes[i]].to_vec()).await {
+                    warn!("failed to send packet to stack, err: {:?}", err);
+                }
             }
         }
     }));
@@ -185,7 +185,7 @@ async fn handle_inbound_stream(mut tcp_listener: TcpListener, interface: String)
     while let Some((mut stream, local, remote)) = tcp_listener.next().await {
         let interface = interface.clone();
         tokio::spawn(async move {
-            info!("new tcp connection: {:?} => {:?}", local, remote);
+            println!("new tcp connection: {:?} => {:?}", local, remote);
             match new_tcp_stream(remote, &interface).await {
                 Ok(mut remote_stream) => {
                     // pipe between two tcp stream
@@ -276,50 +276,4 @@ async fn new_udp_packet(addr: SocketAddr, iface: &str) -> std::io::Result<tokio:
         socket.connect(addr).await?;
     }
     socket
-}
-
-fn get_device_broadcast(device: &tun2::AsyncDevice) -> Option<std::net::Ipv4Addr> {
-    use tun2::AbstractDevice;
-
-    let mtu = device.mtu().unwrap_or(tun2::DEFAULT_MTU);
-
-    let address = match device.address() {
-        Ok(a) => match a {
-            IpAddr::V4(v4) => v4,
-            IpAddr::V6(_) => return None,
-        },
-        Err(_) => return None,
-    };
-
-    let netmask = match device.netmask() {
-        Ok(n) => match n {
-            IpAddr::V4(v4) => v4,
-            IpAddr::V6(_) => return None,
-        },
-        Err(_) => return None,
-    };
-
-    match smoltcp::wire::Ipv4Cidr::from_netmask(address.into(), netmask.into()) {
-        Ok(address_net) => match address_net.broadcast() {
-            Some(broadcast) => {
-                info!(
-                    "tun device network: {} (address: {}, netmask: {}, broadcast: {}, mtu: {})",
-                    address_net, address, netmask, broadcast, mtu,
-                );
-
-                Some(broadcast.into())
-            }
-            None => {
-                error!("invalid tun address {}, netmask {}", address, netmask);
-                None
-            }
-        },
-        Err(err) => {
-            error!(
-                "invalid tun address {}, netmask {}, error: {}",
-                address, netmask, err
-            );
-            None
-        }
-    }
 }

@@ -130,9 +130,10 @@ run_benchmark() {
 }
 
 print_blue "Running benchmarks..."
-run_benchmark "./target/release/netstack-smoltcp"
-run_benchmark "./target/release/netstack-lwip"
-run_benchmark "./target/release/netstack-system"
+run_benchmark "./target/release/netstack-smoltcp-tun-rs"
+# run_benchmark "./target/release/netstack-smoltcp"
+# run_benchmark "./target/release/netstack-lwip"
+# run_benchmark "./target/release/netstack-system"
 
 # 5. clean up
 kill $IPERF_SERVER_PID
